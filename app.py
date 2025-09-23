@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 
-# load_dotenv()
+load_dotenv()
 
 DATA_CSV=os.environ.get("HOTELS_CSV","hotels.csv")
 
@@ -13,11 +13,13 @@ st.title("Hotel Summary Validation")
 # Load the Dataset
 @st.cache_resource
 def load_hotels():
-    return pd.read_csv(DATA_CSV)
+    df=pd.read_csv(DATA_CSV)
+    for col in ["generated_summary","review_status","final_summary"]:
+        if col not in df.columns:
+            df[col]=""
+    return df
 
 hotels_df=load_hotels()
-
-
 # Navigation
 st.sidebar.header("Navigation")
 hotel_ids=hotels_df["hotel_id"].tolist()
@@ -52,7 +54,7 @@ with col2:
         st.write("- "+ c)
 
     st.subheader("Human Review")
-    edited=st.text_area("Edit the Summary if Needed: ",value=result['draft'],height=150)
+    edited=st.text_area("Edit the Summary if Needed: ",value=,height=150)
 
     # colA,colB=st.columns(2)
     # with colA:
