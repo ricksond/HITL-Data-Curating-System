@@ -1,0 +1,65 @@
+import streamlit as st
+import pandas as pd
+import os
+from dotenv import load_dotenv
+
+# load_dotenv()
+
+DATA_CSV=os.environ.get("HOTELS_CSV","hotels.csv")
+
+st.set_page_config(page_title="HITL Curator",layout="wide")
+st.title("Hotel Summary Validation")
+
+# Load the Dataset
+@st.cache_resource
+def load_hotels():
+    return pd.read_csv(DATA_CSV)
+
+hotels_df=load_hotels()
+
+
+# Navigation
+st.sidebar.header("Navigation")
+hotel_ids=hotels_df["hotel_id"].tolist()
+selected_hotel_id=st.sidebar.selectbox("Choose a Hotel ID:",hotel_ids)
+
+# Show Select Hotel
+hotel_row=hotels_df[hotels_df['hotel_id']==selected_hotel_id].iloc[0].to_dict()
+
+
+# More UI
+col1,col2=st.columns([1,2])
+
+with col1:
+    st.subheader("Hotel Attributes")
+    st.write(f"**Hotel Name:** {hotel_row.get('hotel_name')}")
+    st.write(f"**Location:** {hotel_row.get('city')},{hotel_row.get('country')}")
+    st.write(f"**Star Rating:** {hotel_row.get('star_rating')}")
+    st.markdown('"Review Sub Scores"')
+    st.write(f"**Cleanliness:** {hotel_row.get('cleanliness_base')}")
+    st.write(f"**Comfort:** {hotel_row.get('comfort_base')}")
+    st.write(f"**Facilities:** {hotel_row.get('facilities_base')}")
+    st.write(f"**Location:** {hotel_row.get('location_base')}")
+    st.write(f"**Staff:** {hotel_row.get('staff_base')}")
+    st.write(f"**Value For Money:** {hotel_row.get('value_for_money_base')}")
+
+with col2:
+    st.subheader("Summary (Automated)")
+    st.info(result['draft'])
+
+    st.subheader("Critique")
+    for c in result['draft']:
+        st.write("- "+ c)
+
+    st.subheader("Human Review")
+    edited=st.text_area("Edit the Summary if Needed: ",value=result['draft'],height=150)
+
+    # colA,colB=st.columns(2)
+    # with colA:
+    #     if st.buttom("Accept"):
+    #         persist_review(hotel_row['hotel_id'],"accept",edited)
+    #         st.success("Summary Accepted and Saved.")
+    # with colB:
+    #     if st.button("Reject"):
+    #         persist_review(hotel_row["hotel_id"],"reject",edited)
+    #         st.error("Summary Rejected and saved.")
