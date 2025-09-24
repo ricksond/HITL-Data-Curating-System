@@ -7,5 +7,5 @@ Requirements:
 
 Files:
 - pipeline.py: LangGraph pipeline (normalize -> draft -> critique). Uses StateGraph.
-- app.py: Streamlit UI to review and persist feedback to feedback.csv.
-- feedback.csv will be created in project root (or path set by FEEDBACK_CSV env var).
+- app.py: Streamlit UI to review and persist feedback to the same hotels.csv files
+by creating three more seperate columns in code
