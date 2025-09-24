@@ -1,6 +1,6 @@
 # HITL-Data-Curating-System
 Requirements:
-- Set your OpenAI API key: export OPENAI_API_KEY="sk-..."
+- Set your OpenAI API key: export OPENAI_API_KEY
 - Install deps: pip install -r requirements.txt
 - Put your hotel CSV as `hotels.csv` (or upload in the sidebar).
 - Run: streamlit run app.py
