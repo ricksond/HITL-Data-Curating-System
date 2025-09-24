@@ -2,10 +2,12 @@ import streamlit as st
 import pandas as pd
 import os
 from dotenv import load_dotenv
+from pipeline import generate_draft_and_critique,persist_review
+
 
 load_dotenv()
 
-DATA_CSV=os.environ.get("HOTELS_CSV","hotels.csv")
+HOTELS_CSV=os.environ.get("HOTELS_CSV","hotels.csv")
 
 st.set_page_config(page_title="HITL Curator",layout="wide")
 st.title("Hotel Summary Validation")
@@ -13,7 +15,7 @@ st.title("Hotel Summary Validation")
 # Load the Dataset
 @st.cache_resource
 def load_hotels():
-    df=pd.read_csv(DATA_CSV)
+    df=pd.read_csv(HOTELS_CSV)
     for col in ["generated_summary","review_status","final_summary"]:
         if col not in df.columns:
             df[col]=""
@@ -27,6 +29,14 @@ selected_hotel_id=st.sidebar.selectbox("Choose a Hotel ID:",hotel_ids)
 
 # Show Select Hotel
 hotel_row=hotels_df[hotels_df['hotel_id']==selected_hotel_id].iloc[0].to_dict()
+
+if not hotel_row['generated_summary']:
+    result=generate_draft_and_critique(hotel_row)
+    draft=result['draft']
+    hotels_df.loc[hotels_df["hotel_id"]==selected_hotel_id,"generated_summary"]=draft
+    hotels_df.to_csv(HOTELS_CSV,index=False)
+else:
+    draft=hotel_row["generated_summary"]
 
 
 # More UI
@@ -47,21 +57,15 @@ with col1:
 
 with col2:
     st.subheader("Summary (Automated)")
-    st.info(result['draft'])
+    st.info(draft)
+    edited=st.text_area("Edit the summary if needed: ",value=draft,height=150)
 
-    st.subheader("Critique")
-    for c in result['draft']:
-        st.write("- "+ c)
-
-    st.subheader("Human Review")
-    edited=st.text_area("Edit the Summary if Needed: ",value=,height=150)
-
-    # colA,colB=st.columns(2)
-    # with colA:
-    #     if st.buttom("Accept"):
-    #         persist_review(hotel_row['hotel_id'],"accept",edited)
-    #         st.success("Summary Accepted and Saved.")
-    # with colB:
-    #     if st.button("Reject"):
-    #         persist_review(hotel_row["hotel_id"],"reject",edited)
-    #         st.error("Summary Rejected and saved.")
+    colA,colB=st.columns(2)
+    with colA:
+        if st.button("Accept"):
+            persist_review(hotel_row['hotel_id'],"accept",edited)
+            st.success("Summary Accepted and Saved.")
+    with colB:
+        if st.button("Reject"):
+            persist_review(hotel_row["hotel_id"],"reject",edited)
+            st.error("Summary Rejected and saved.")
