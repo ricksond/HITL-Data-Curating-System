@@ -29,7 +29,13 @@ def normalize_node(state:HotelState,config=None,runtime=None):
     row=dict(state.get("hotel_row")or {})
     normalized={}
     for k,v in row.items():
-        normalized[k]=v.strip() if isinstance(v,str) else v
+        if isinstance(v,str):
+            v=v.strip()
+            if v.lower() in ("nan",""):
+                v=None
+        if pd.isna(v) or v in ("","nan","NaN"):
+            v=None
+        normalized[k]=v
     keys=["hotel_id","hotel_name","city","country","star_rating","lat","lon",
           "cleanliness_base","comfort_base","facilities_base","location_base",
           "staff_base","value_for_money_base",
@@ -64,10 +70,16 @@ def draft_node(state:HotelState,config=None,runtime=None):
         "Value/money": hotel.get("value_for_money_base")
     }
 
-    top_scores=sorted(
-        [(k,v) for k,v in scores.items() if v],
-        key=lambda x: float(x[1]),
+    valid_scores=[(k,v) for k,v in scores.items() if v not in(None,"","NaN")]
+
+    try:
+        top_scores=sorted(
+        [(k,float(v)) for k,v in valid_scores.items()],
+        key=lambda x: x[1],
         reverse=True)[:4]
+    except Exception:
+        top_scores=[]
+    
     if top_scores:
         score_str=", ".join([f"{k} ({v})" for k,v in top_scores])
         hotel_attr.append("Notable Strengths: "+score_str)
@@ -78,13 +90,16 @@ def draft_node(state:HotelState,config=None,runtime=None):
 
     system_prompt=SystemMessage(content=style_guide)
     user_prompt=HumanMessage(content=(
-        f"Hotel Name : {hotel}\n"
+        f"Hotel Name : {name}\n"
         f"Location L {location}\n"
         f"{hotel_attr_text}]\n\n"
+        f"Notable strengths: {', '.join([f'{k}({v})' for k,v in top_scores]) if top_scores else 'None Listed'}\n\n"
         "Write a single paragraph(60-100 words)."
     ))
     res=llm([system_prompt,user_prompt])
-    draft=res.content.strip()
+    draft=(res.content or "").strip()
+    if not draft:
+        draft=f"{name} is located in {location}.Further details were not available."
     return {"draft":draft}
 
 graph_builder.add_node("generate_draft",draft_node)
@@ -96,7 +111,7 @@ def critique_node(state:HotelState,config=None,runtime=None):
     hotel=state.get("hotel_row",{})
     missing=[]
     if hotel.get('city') or hotel.get('country'):
-        if not (hotel.get('city') in draft) or not(hotel.get('country') in draft):
+        if not (hotel.get('city') in draft) or not(hotel.get('country') and hotel['country'] in draft):
             missing.append("City or Country not mentioned")
     scores={
          "cleanliness": hotel.get('cleanliness_base'),
@@ -106,6 +121,7 @@ def critique_node(state:HotelState,config=None,runtime=None):
          "staff":hotel.get('staff_base'),
          "Value for money": hotel.get('value_for_money_base')
      }
+    
     mentioned=sum(1 for k,v in scores.items() if v and k in draft.lower())
     if mentioned<2:
         missing.append("Fewer than two review strengths mentioned")
