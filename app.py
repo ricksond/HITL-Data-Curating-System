@@ -30,7 +30,7 @@ selected_hotel_id=st.sidebar.selectbox("Choose a Hotel ID:",hotel_ids)
 # Show Select Hotel
 hotel_row=hotels_df[hotels_df['hotel_id']==selected_hotel_id].iloc[0].to_dict()
 
-if not hotel_row['generated_summary']:
+if hotel_row['generated_summary']:
     result=generate_draft_and_critique(hotel_row)
     draft=result['draft']
     hotels_df.loc[hotels_df["hotel_id"]==selected_hotel_id,"generated_summary"]=draft
