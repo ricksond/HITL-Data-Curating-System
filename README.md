@@ -1,4 +1,4 @@
-# HITL-Data-Curating-System
+# HITL-Data-Curating-System : Chatbot Project of Human AI interaction course
 Requirements:
 - Set your OpenAI API key: export OPENAI_API_KEY
 - Install deps: pip install -r requirements.txt
